@@ -981,6 +981,15 @@
             color: var(--muted-foreground);
         }
 
+        #account-menu { display: none; }
+        #account-menu.card { box-shadow: 0 10px 30px hsl(0 0% 0% / 0.4); }
+        #account-menu.hidden { display: none !important; }
+        #account-menu.visible { display: block !important; }
+
+        @media (max-width: 767px) {
+            #account-menu { right: 0.5rem; top: 5rem; width: 12rem; }
+        }
+
         /* Responsive */
         @media (max-width: 767px) {
             .hero-title {
@@ -1052,9 +1061,27 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
+                    <button id="account-btn" class="btn btn-ghost" onclick="toggleAccountMenu()" aria-expanded="false" style="position: relative;">
+                        <img id="account-avatar" src="" alt="Account" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">
+                    </button>
+                    <div id="account-menu" class="card hidden" style="position: absolute; right: 1rem; top: 4rem; width: 14rem; padding: 0.5rem; z-index: 60;">
+                        <div id="account-logged-out" style="display: none;">
+                            <button class="btn btn-primary" style="width:100%; margin-bottom:0.5rem;" onclick="showLogin()">Sign In</button>
+                            <button class="btn btn-outline" style="width:100%;" onclick="showSignup()">Create Account</button>
+                        </div>
+                        <div id="account-logged-in" style="display: none;">
+                            <div style="padding: 0.5rem 0; border-bottom: 1px solid var(--border); margin-bottom:0.5rem;">
+                                <div id="account-name-display" style="font-weight:600;"></div>
+                                <div id="account-email-display" style="font-size:0.85rem; color:var(--muted-foreground);"></div>
+                            </div>
+                            <button class="btn btn-ghost" style="width:100%; text-align:left;" onclick="showAccount()">My Account</button>
+                            <button class="btn btn-ghost" style="width:100%; text-align:left;" onclick="showOrders()">Orders</button>
+                            <button id="logout-btn" class="btn btn-outline" style="width:100%; margin-top:0.5rem;" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-
+        
             <div id="mobile-menu" class="mobile-menu">
                 <form onsubmit="searchProducts(event)">
                     <div class="input-group">
@@ -1071,7 +1098,6 @@
                 </nav>
             </div>
         </div>
-        
     </header>
 
     <!-- Main Content -->
@@ -2147,7 +2173,7 @@ const products = [
         rating: 4.7,
         reviewCount: 6000,
         category: "tablets",
-        description: "Lightweight, powerful iPad Air
+        description: "Lightweight, powerful iPad Air with M3 chip, USB-C and Apple Pencil support",
         features: [
             "M3 chip",
             "True Tone display",
@@ -2277,6 +2303,56 @@ const products = [
             document.getElementById('signup-modal').classList.add('hidden');
         }
 
+        // Account menu handling
+        function toggleAccountMenu() {
+            const menu = document.getElementById('account-menu');
+            const btn = document.getElementById('account-btn');
+            const isOpen = menu.classList.contains('visible');
+            if (isOpen) {
+                menu.classList.remove('visible'); menu.classList.add('hidden');
+                btn.setAttribute('aria-expanded','false');
+            } else {
+                updateAccountUI();
+                menu.classList.remove('hidden'); menu.classList.add('visible');
+                btn.setAttribute('aria-expanded','true');
+            }
+        }
+
+        function updateAccountUI() {
+            const user = JSON.parse(localStorage.getItem('gadget-zone-user') || 'null');
+            const loggedInBlock = document.getElementById('account-logged-in');
+            const loggedOutBlock = document.getElementById('account-logged-out');
+            const avatar = document.getElementById('account-avatar');
+            if (user) {
+            loggedInBlock.style.display = 'block';
+            loggedOutBlock.style.display = 'none';
+            document.getElementById('account-name-display').textContent = user.name || 'User';
+            document.getElementById('account-email-display').textContent = user.email || '';
+            if (user.avatar) avatar.src = user.avatar;
+            } else {
+                loggedInBlock.style.display = 'none';
+                loggedOutBlock.style.display = 'block';
+                avatar.src = 'images/avatar-placeholder.png';
+            }
+        }
+
+        function showAccount(){ toggleAccountMenu(); hideModals(); showToast('Account','Open account page (implement).'); }
+        function showOrders(){ toggleAccountMenu(); showToast('Orders','Open orders page (implement).'); }
+            function logout(){ localStorage.removeItem('gadget-zone-user'); updateAccountUI(); toggleAccountMenu(); showToast('Logged Out','You have been logged out.'); }
+
+        // close account menu when clicking outside
+        document.addEventListener('click', function(event){
+            const menu = document.getElementById('account-menu');
+            const btn = document.getElementById('account-btn');
+            if (!menu || !btn) return;
+            if (!menu.contains(event.target) && !btn.contains(event.target)) {
+                menu.classList.remove('visible'); menu.classList.add('hidden');
+                btn.setAttribute('aria-expanded','false');
+            }
+        });
+
+        // init on load
+        document.addEventListener('DOMContentLoaded', function(){ updateAccountUI(); });
         // Mobile Menu
         function toggleMobileMenu() {
             const menu = document.getElementById('mobile-menu');
